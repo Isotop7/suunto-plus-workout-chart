@@ -21,10 +21,21 @@
     if (intervals[i].pace > maxPace) maxPace = intervals[i].pace;
   }
 
-  var formatPace = function(secs) {
+  var formatTime = function(secs) {
     var m = Math.floor(secs / 60);
     var s = Math.floor(secs % 60);
     return m + ':' + (s < 10 ? '0' : '') + s;
+  };
+
+  var calcIntervalRemaining = function(time) {
+    var elapsed = 0;
+    for (var i = 0; i < intervals.length; i++) {
+      elapsed += intervals[i].duration;
+      if (time < elapsed) {
+        return Math.ceil(elapsed - time);
+      }
+    }
+    return 0;
   };
 
   var paceColor = function(pace) {
@@ -42,11 +53,10 @@
     var w = ctx.width;
     var h = ctx.height;
 
-    // Compact margins scaled to canvas size
     var lm = Math.round(w * 0.12);
-    var bm = Math.round(h * 0.14);
-    var tm = 3;
-    var rm = 3;
+    var bm = Math.round(h * 0.15);
+    var tm = 4;
+    var rm = 4;
     var cw = w - lm - rm;
     var ch = h - tm - bm;
 
@@ -59,7 +69,7 @@
     var pMax = maxPace + pr * 0.1;
 
     var fs = Math.min(11, Math.max(8, Math.round(w / 26)));
-    ctx.font = fs + 'px monospace';
+    ctx.font = 'bold ' + fs + 'px monospace';
 
     // Y axis: 3 grid lines with pace labels
     for (var gi = 0; gi <= 3; gi++) {
@@ -73,9 +83,9 @@
       ctx.lineTo(lm + cw, gy);
       ctx.stroke();
 
-      var lbl = formatPace(gPace);
+      var lbl = formatTime(gPace);
       var tw = ctx.measureText(lbl).width;
-      ctx.fillStyle = '#666666';
+      ctx.fillStyle = '#AAAAAA';
       ctx.fillText(lbl, lm - tw - 3, gy - Math.round(fs * 0.4));
     }
 
@@ -113,7 +123,7 @@
       ctx.moveTo(xp, tm + ch);
       ctx.lineTo(xp, tm + ch + 2);
       ctx.stroke();
-      ctx.fillStyle = '#666666';
+      ctx.fillStyle = '#AAAAAA';
       ctx.fillText(xlbl, xp - xtw / 2, tm + ch + 3);
     }
 
@@ -132,6 +142,8 @@
 onActivate="
   durationToken = $.subscribe('/Activity/Move/-1/Duration/Current', function(v) {
     currentTime = v;
+    setText('#elapsedVal', formatTime(v));
+    setText('#intervalVal', formatTime(calcIntervalRemaining(v)));
     control('#intervalChart', 'REFRESH');
   });
 "
@@ -141,12 +153,17 @@ onDeactivate="
 
   <object id="intervalChart" type="canvas"
           build="ctx => drawChart(ctx)"
-          style="position:absolute; left:0; width:100%; top:22%; height:50%;" />
+          style="position:absolute; left:8%; width:80%; top:23%; height:48%;" />
 
   <div class="sp-title-bg" style="width:100%;height:20%;"></div>
   <div class="sp-title-text sp-t-m p-hc" style="top:5%">Interval Progress</div>
 
-  <div class="sp-d-s f-num" style="top:calc(82% - 50%e);left:calc(50% - 50%e);">
-    <eval input="/Activity/Move/-1/Duration/Current" outputFormat="Duration_FourdigitsFixed" default="--" />
-  </div>
+  <!-- Elapsed time -->
+  <div class="sp-t-s cm-mid" style="position:absolute; top:72%; left:calc(35% - 50%e);">elapsed</div>
+  <div id="elapsedVal" class="sp-b-m f-num" style="position:absolute; top:calc(85% - 50%e); left:calc(35% - 50%e);">-:--</div>
+
+  <!-- Remaining in current interval -->
+  <div class="sp-t-s cm-mid" style="position:absolute; top:72%; left:calc(65% - 50%e);">interval</div>
+  <div id="intervalVal" class="sp-b-m f-num" style="position:absolute; top:calc(85% - 50%e); left:calc(65% - 50%e);">-:--</div>
+
 </uiView>
