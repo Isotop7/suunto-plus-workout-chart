@@ -1,0 +1,65 @@
+<uiView onLoad="
+  // Simple interval data directly in HTML
+  var intervals = [
+    { duration: 600, pace: 360, color: '#1E90FF' },
+    { duration: 900, pace: 420, color: '#32CD32' },
+    { duration: 600, pace: 300, color: '#FF4500' },
+    { duration: 900, pace: 480, color: '#228B22' },
+    { duration: 600, pace: 330, color: '#FF6347' }
+  ];
+
+  // Helper function to calculate total duration
+  var calculateTotalDuration = function() {
+    var total = 0;
+    for (var i = 0; i < intervals.length; i++) {
+      total += intervals[i].duration;
+    }
+    return total;
+  };
+
+  // Simple drawing function
+  var drawIntervalChart = function(ctx, currentTime) {
+    var totalDuration = calculateTotalDuration();
+    var width = ctx.width;
+    var height = ctx.height;
+
+    // Clear canvas
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(0, 0, width, height);
+
+    // Draw intervals
+    var x = 0;
+    for (var i = 0; i < intervals.length; i++) {
+      var intervalWidth = (intervals[i].duration / totalDuration) * width;
+      ctx.fillStyle = intervals[i].color;
+      ctx.fillRect(x, 0, intervalWidth, height);
+      x += intervalWidth;
+    }
+
+    // Draw progress line
+    if (currentTime > 0) {
+      var progressX = (currentTime / totalDuration) * width;
+      ctx.strokeStyle = '#FFFFFF';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(progressX, 0);
+      ctx.lineTo(progressX, height);
+      ctx.stroke();
+    }
+  };
+">
+
+  <!-- Simple canvas visualization -->
+  <object id="intervalChart" type="canvas"
+          build="ctx => drawIntervalChart(ctx, input.Duration)"
+          style="position:absolute; left:15%; width:70%; top:40%; height:30%;" />
+
+  <!-- Title -->
+  <div class="sp-title-bg" style="width:100%;height:20%;"></div>
+  <div class="sp-title-text sp-t-m p-hc" style="top:5%">Interval Progress</div>
+
+  <!-- Current time display -->
+  <div class="sp-d-s f-num" style="top:calc(80% - 50%e);left:calc(50% - 50%e);">
+    <eval input="/Activity/Move/-1/Duration/Current" outputFormat="Duration_FourdigitsFixed" default="--" />
+  </div>
+</uiView>

@@ -1,0 +1,34 @@
+{
+  "name": "Interval Visualization",
+  "version": "1.0",
+  "author": "Suunto",
+  "description": "Visualizes workout intervals with pace",
+  "type": "feature",
+  "usage": "workout",
+  "modificationTime": 1773862793,
+  "in": [
+    {
+      "name": "Duration",
+      "source": "Activity/Move/-1/Duration/Current",
+      "type": "subscribe"
+    },
+    {
+      "name": "Speed",
+      "source": "Activity/Current/Speed",
+      "type": "subscribe"
+    }
+  ],
+  "out": [
+    {
+      "name": "currentInterval"
+    },
+    {
+      "name": "progressPercentage"
+    }
+  ],
+  "template": [
+    {
+      "name": "interval-chart.html"
+    }
+  ]
+}
