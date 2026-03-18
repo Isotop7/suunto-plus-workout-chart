@@ -41,12 +41,10 @@
   var paceColor = function(pace) {
     var rng = maxPace - minPace;
     if (rng < 1) return '#FF0000';
-    var t = (pace - minPace) / rng;
-    var r = Math.round(255 * (1 - t));
-    var g = Math.round(255 * t);
-    var rh = (r < 16 ? '0' : '') + r.toString(16);
-    var gh = (g < 16 ? '0' : '') + g.toString(16);
-    return '#' + rh + gh + '00';
+    var t = (pace - minPace) / rng; // 0 = fast, 1 = slow
+    var rb = Math.round(255 * t);   // fast=0 (green), slow=255 (white)
+    var rbh = (rb < 16 ? '0' : '') + rb.toString(16);
+    return '#' + rbh + 'ff' + rbh;
   };
 
   var drawChart = function(ctx) {
@@ -97,6 +95,17 @@
       var bh = ((pMax - iv.pace) / (pMax - pMin)) * ch;
       ctx.fillStyle = paceColor(iv.pace);
       ctx.fillRect(bx, tm + ch - bh, bw - 1, bh);
+
+      // Pace label — inside bar if tall enough, above bar otherwise
+      var paceLbl = formatTime(iv.pace);
+      var pltw = ctx.measureText(paceLbl).width;
+      if (bw - 1 > pltw + 2) {
+        var barTop = tm + ch - bh;
+        // Tall enough: draw inside at top edge, dark text on colored bar
+        ctx.fillStyle = '#1a1a1a';
+        ctx.fillText(paceLbl, bx + (bw - 1) / 2 - pltw / 2, barTop);
+      }
+
       bx += bw;
     }
 
