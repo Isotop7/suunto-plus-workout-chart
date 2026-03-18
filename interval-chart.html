@@ -22,140 +22,148 @@
     if (intervals[i].pace > maxPace) maxPace = intervals[i].pace;
   }
 
-  var formatTime = function(secs) {
-    var m = Math.floor(secs / 60);
-    var s = Math.floor(secs % 60);
-    return m + ':' + (s < 10 ? '0' : '') + s;
+  var formatTime = function(seconds) {
+    var minutes = Math.floor(seconds / 60);
+    var remainingSeconds = Math.floor(seconds % 60);
+    return minutes + ':' + (remainingSeconds < 10 ? '0' : '') + remainingSeconds;
   };
 
-  var calcIntervalRemaining = function(time) {
-    var elapsed = 0;
+  var calcIntervalRemaining = function(elapsedTime) {
+    var intervalEnd = 0;
     for (var i = 0; i < intervals.length; i++) {
-      elapsed += intervals[i].duration;
-      if (time < elapsed) {
-        return Math.ceil(elapsed - time);
+      intervalEnd += intervals[i].duration;
+      if (elapsedTime < intervalEnd) {
+        return Math.ceil(intervalEnd - elapsedTime);
       }
     }
     return 0;
   };
 
   var paceColor = function(pace) {
-    var rng = maxPace - minPace;
-    if (rng < 1) return '#FF0000';
-    var t = (pace - minPace) / rng; // 0 = fast, 1 = slow
-    var rb = Math.round(255 * t);   // fast=0 (green), slow=255 (white)
-    var rbh = (rb < 16 ? '0' : '') + rb.toString(16);
-    return '#' + rbh + 'ff' + rbh;
+    var paceRange = maxPace - minPace;
+    if (paceRange < 1) return '#FF0000';
+    var normalizedPace = (pace - minPace) / paceRange; // 0 = fast, 1 = slow
+    var whiteChannel = Math.round(255 * normalizedPace); // fast=0 (green), slow=255 (white)
+    var whiteChannelHex = (whiteChannel < 16 ? '0' : '') + whiteChannel.toString(16);
+    return '#' + whiteChannelHex + 'ff' + whiteChannelHex;
   };
 
   var drawChart = function(ctx) {
-    var w = ctx.width;
-    var h = ctx.height;
+    var canvasWidth = ctx.width;
+    var canvasHeight = ctx.height;
 
-    var lm = Math.round(w * 0.15);
-    var bm = Math.round(h * 0.15);
-    var tm = 4;
-    var rm = 4;
-    var cw = w - lm - rm;
-    var ch = h - tm - bm;
+    var leftMargin = Math.round(canvasWidth * 0.15);
+    var bottomMargin = Math.round(canvasHeight * 0.15);
+    var topMargin = 4;
+    var rightMargin = 4;
+    var chartWidth = canvasWidth - leftMargin - rightMargin;
+    var chartHeight = canvasHeight - topMargin - bottomMargin;
 
     ctx.fillStyle = '#000000';
-    ctx.fillRect(0, 0, w, h);
+    ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 
-    var pr = maxPace - minPace;
-    if (pr < 30) pr = 30;
-    var pMin = minPace - pr * 0.1;
-    var pMax = maxPace + pr * 0.1;
+    var paceSpread = maxPace - minPace;
+    if (paceSpread < 30) paceSpread = 30;
+    var paceAxisMin = minPace - paceSpread * 0.1;
+    var paceAxisMax = maxPace + paceSpread * 0.1;
 
-    var fs = Math.min(11, Math.max(8, Math.round(w / 26)));
-    ctx.font = 'bold ' + fs + 'px monospace';
+    var fontSize = Math.min(11, Math.max(8, Math.round(canvasWidth / 26)));
+    ctx.font = 'bold ' + fontSize + 'px monospace';
 
-    // Y axis: 3 grid lines with pace labels
-    for (var gi = 0; gi <= 3; gi++) {
-      var gPace = pMin + (pMax - pMin) * gi / 3;
-      var gy = tm + ch - (ch * gi / 3);
+    // Y axis: grid lines with pace labels
+    for (var gridIndex = 0; gridIndex <= 3; gridIndex++) {
+      var gridPace = paceAxisMin + (paceAxisMax - paceAxisMin) * gridIndex / 3;
+      var gridY = topMargin + chartHeight - (chartHeight * gridIndex / 3);
 
       ctx.strokeStyle = '#252525';
       ctx.lineWidth = 1;
       ctx.beginPath();
-      ctx.moveTo(lm, gy);
-      ctx.lineTo(lm + cw, gy);
+      ctx.moveTo(leftMargin, gridY);
+      ctx.lineTo(leftMargin + chartWidth, gridY);
       ctx.stroke();
 
-      var lbl = formatTime(gPace);
-      var tw = ctx.measureText(lbl).width;
+      var gridLabel = formatTime(gridPace);
+      var gridLabelWidth = ctx.measureText(gridLabel).width;
       ctx.fillStyle = '#AAAAAA';
-      ctx.fillText(lbl, lm - tw - 10, gy - Math.round(fs * 0.4));
+      ctx.fillText(gridLabel, leftMargin - gridLabelWidth - 10, gridY - Math.round(fontSize * 0.4));
     }
 
     // Interval bars
-    var bx = lm;
-    for (var bi = 0; bi < intervals.length; bi++) {
-      var iv = intervals[bi];
-      var bw = (iv.duration / totalDuration) * cw;
-      var bh = ((pMax - iv.pace) / (pMax - pMin)) * ch;
-      ctx.fillStyle = paceColor(iv.pace);
-      ctx.fillRect(bx, tm + ch - bh, bw - 1, bh);
+    var barX = leftMargin;
+    for (var barIndex = 0; barIndex < intervals.length; barIndex++) {
+      var interval = intervals[barIndex];
+      var barWidth = (interval.duration / totalDuration) * chartWidth;
+      var barHeight = ((paceAxisMax - interval.pace) / (paceAxisMax - paceAxisMin)) * chartHeight;
+      var barTop = topMargin + chartHeight - barHeight;
+
+      ctx.fillStyle = paceColor(interval.pace);
+      ctx.fillRect(barX, barTop, barWidth - 1, barHeight);
 
       // Pace label — inside bar if tall enough, above bar otherwise
-      var paceLbl = formatTime(iv.pace);
-      var pltw = ctx.measureText(paceLbl).width;
-      if (bw - 1 > pltw + 2) {
-        var barTop = tm + ch - bh;
-        // Tall enough: draw inside at top edge, dark text on colored bar
-        ctx.fillStyle = '#1a1a1a';
-        ctx.fillText(paceLbl, bx + (bw - 1) / 2 - pltw / 2, barTop);
+      var paceLabel = formatTime(interval.pace);
+      var paceLabelWidth = ctx.measureText(paceLabel).width;
+      if (barWidth - 1 > paceLabelWidth + 2) {
+        var labelX = barX + (barWidth - 1) / 2 - paceLabelWidth / 2;
+        if (barHeight >= fontSize + 2) {
+          ctx.fillStyle = '#1a1a1a';
+          ctx.fillText(paceLabel, labelX, barTop);
+        } else {
+          ctx.fillStyle = '#AAAAAA';
+          ctx.fillText(paceLabel, labelX, barTop - fontSize - 3);
+        }
       }
 
-      bx += bw;
+      barX += barWidth;
     }
 
     // Axes
     ctx.strokeStyle = '#444444';
     ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.moveTo(lm, tm);
-    ctx.lineTo(lm, tm + ch);
+    ctx.moveTo(leftMargin, topMargin);
+    ctx.lineTo(leftMargin, topMargin + chartHeight);
     ctx.stroke();
     ctx.beginPath();
-    ctx.moveTo(lm, tm + ch);
-    ctx.lineTo(lm + cw, tm + ch);
+    ctx.moveTo(leftMargin, topMargin + chartHeight);
+    ctx.lineTo(leftMargin + chartWidth, topMargin + chartHeight);
     ctx.stroke();
 
-    // X axis labels
-    var xStep = totalDuration <= 1800 ? 300 : 600;
-    for (var xi = 0; xi <= totalDuration; xi += xStep) {
-      var xp = lm + (xi / totalDuration) * cw;
-      var xlbl = '' + Math.round(xi / 60);
-      var xtw = ctx.measureText(xlbl).width;
+    // X axis tick marks and labels
+    var xTickStep = totalDuration <= 1800 ? 300 : 600;
+    for (var xTick = 0; xTick <= totalDuration; xTick += xTickStep) {
+      var tickX = leftMargin + (xTick / totalDuration) * chartWidth;
+      var tickLabel = '' + Math.round(xTick / 60);
+      var tickLabelWidth = ctx.measureText(tickLabel).width;
+
       ctx.strokeStyle = '#333333';
       ctx.beginPath();
-      ctx.moveTo(xp, tm + ch);
-      ctx.lineTo(xp, tm + ch + 2);
+      ctx.moveTo(tickX, topMargin + chartHeight);
+      ctx.lineTo(tickX, topMargin + chartHeight + 2);
       ctx.stroke();
-      var labelX = xp - xtw / 2;
-      if (labelX + xtw > lm + cw) labelX = lm + cw - xtw;
+
+      var tickLabelX = tickX - tickLabelWidth / 2;
+      if (tickLabelX + tickLabelWidth > leftMargin + chartWidth) tickLabelX = leftMargin + chartWidth - tickLabelWidth;
       ctx.fillStyle = '#AAAAAA';
-      ctx.fillText(xlbl, labelX, tm + ch + 6);
+      ctx.fillText(tickLabel, tickLabelX, topMargin + chartHeight + 6);
     }
 
     // Vertical time marker
     if (currentTime > 0) {
-      var px = lm + Math.min(1, currentTime / totalDuration) * cw;
+      var markerX = leftMargin + Math.min(1, currentTime / totalDuration) * chartWidth;
       ctx.strokeStyle = '#ffffff';
       ctx.lineWidth = 4;
       ctx.beginPath();
-      ctx.moveTo(px, tm);
-      ctx.lineTo(px, tm + ch);
+      ctx.moveTo(markerX, topMargin);
+      ctx.lineTo(markerX, topMargin + chartHeight);
       ctx.stroke();
     }
   };
 "
 onActivate="
-  durationToken = $.subscribe('/Activity/Move/-1/Duration/Current', function(v) {
-    currentTime = v;
-    setText('#elapsedVal', formatTime(v));
-    setText('#intervalVal', formatTime(calcIntervalRemaining(v)));
+  durationToken = $.subscribe('/Activity/Move/-1/Duration/Current', function(elapsedTime) {
+    currentTime = elapsedTime;
+    setText('#elapsedVal', formatTime(elapsedTime));
+    setText('#intervalVal', formatTime(calcIntervalRemaining(elapsedTime)));
     control('#intervalChart', 'REFRESH');
   });
 "
