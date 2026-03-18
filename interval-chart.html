@@ -1,9 +1,9 @@
 <uiView onLoad="
   var intervals = [
-    { duration: 600, pace: 360 },
+    { duration: 500, pace: 360 },
     { duration: 900, pace: 420 },
-    { duration: 600, pace: 300 },
-    { duration: 900, pace: 480 },
+    { duration: 400, pace: 300 },
+    { duration: 700, pace: 480 },
     { duration: 600, pace: 330 }
   ];
 
@@ -53,7 +53,7 @@
     var w = ctx.width;
     var h = ctx.height;
 
-    var lm = Math.round(w * 0.12);
+    var lm = Math.round(w * 0.15);
     var bm = Math.round(h * 0.15);
     var tm = 4;
     var rm = 4;
@@ -86,7 +86,7 @@
       var lbl = formatTime(gPace);
       var tw = ctx.measureText(lbl).width;
       ctx.fillStyle = '#AAAAAA';
-      ctx.fillText(lbl, lm - tw - 3, gy - Math.round(fs * 0.4));
+      ctx.fillText(lbl, lm - tw - 10, gy - Math.round(fs * 0.4));
     }
 
     // Interval bars
@@ -123,8 +123,10 @@
       ctx.moveTo(xp, tm + ch);
       ctx.lineTo(xp, tm + ch + 2);
       ctx.stroke();
+      var labelX = xp - xtw / 2;
+      if (labelX + xtw > lm + cw) labelX = lm + cw - xtw;
       ctx.fillStyle = '#AAAAAA';
-      ctx.fillText(xlbl, xp - xtw / 2, tm + ch + 3);
+      ctx.fillText(xlbl, labelX, tm + ch + 6);
     }
 
     // Vertical time marker
@@ -155,8 +157,8 @@ onDeactivate="
           build="ctx => drawChart(ctx)"
           style="position:absolute; left:8%; width:80%; top:23%; height:48%;" />
 
-  <div class="sp-title-bg" style="width:100%;height:20%;"></div>
-  <div class="sp-title-text sp-t-m p-hc" style="top:5%">Interval Progress</div>
+  <div class="sp-title-bg" style="width:100%;height:17%;"></div>
+  <div class="sp-title-text sp-t-s p-hc" style="top:5%">Interval Progress</div>
 
   <!-- Elapsed time -->
   <div class="sp-t-s cm-mid" style="position:absolute; top:72%; left:calc(35% - 50%e);">elapsed</div>
