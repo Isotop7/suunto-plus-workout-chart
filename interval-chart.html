@@ -1,101 +1,152 @@
 <uiView onLoad="
-  // Simple interval data directly in HTML
   var intervals = [
-    { duration: 600, pace: 360, color: '#1E90FF' },
-    { duration: 900, pace: 420, color: '#32CD32' },
-    { duration: 600, pace: 300, color: '#FF4500' },
-    { duration: 900, pace: 480, color: '#228B22' },
-    { duration: 600, pace: 330, color: '#FF6347' }
+    { duration: 600, pace: 360 },
+    { duration: 900, pace: 420 },
+    { duration: 600, pace: 300 },
+    { duration: 900, pace: 480 },
+    { duration: 600, pace: 330 }
   ];
 
-  // Helper function to calculate total duration
-  var calculateTotalDuration = function() {
-    var total = 0;
-    for (var i = 0; i < intervals.length; i++) {
-      total += intervals[i].duration;
-    }
-    return total;
+  var currentTime = 0;
+  var durationToken;
+
+  var totalDuration = 0;
+  for (var i = 0; i < intervals.length; i++) {
+    totalDuration += intervals[i].duration;
+  }
+
+  var minPace = Infinity, maxPace = -Infinity;
+  for (var i = 0; i < intervals.length; i++) {
+    if (intervals[i].pace < minPace) minPace = intervals[i].pace;
+    if (intervals[i].pace > maxPace) maxPace = intervals[i].pace;
+  }
+
+  var formatPace = function(secs) {
+    var m = Math.floor(secs / 60);
+    var s = Math.floor(secs % 60);
+    return m + ':' + (s < 10 ? '0' : '') + s;
   };
 
-  // Simple drawing function
-  var drawIntervalChart = function(ctx, currentTime) {
-    var totalDuration = calculateTotalDuration();
-    var width = ctx.width;
-    var height = ctx.height;
+  var paceColor = function(pace) {
+    var rng = maxPace - minPace;
+    if (rng < 1) return '#FF0000';
+    var t = (pace - minPace) / rng;
+    var r = Math.round(255 * (1 - t));
+    var g = Math.round(255 * t);
+    var rh = (r < 16 ? '0' : '') + r.toString(16);
+    var gh = (g < 16 ? '0' : '') + g.toString(16);
+    return '#' + rh + gh + '00';
+  };
 
-    // Clear canvas
+  var drawChart = function(ctx) {
+    var w = ctx.width;
+    var h = ctx.height;
+
+    // Compact margins scaled to canvas size
+    var lm = Math.round(w * 0.12);
+    var bm = Math.round(h * 0.14);
+    var tm = 3;
+    var rm = 3;
+    var cw = w - lm - rm;
+    var ch = h - tm - bm;
+
     ctx.fillStyle = '#000000';
-    ctx.fillRect(0, 0, width, height);
+    ctx.fillRect(0, 0, w, h);
 
-    // Find min and max pace for Y-axis scaling
-    var minPace = Infinity;
-    var maxPace = -Infinity;
-    for (var i = 0; i < intervals.length; i++) {
-      if (intervals[i].pace < minPace) minPace = intervals[i].pace;
-      if (intervals[i].pace > maxPace) maxPace = intervals[i].pace;
-    }
+    var pr = maxPace - minPace;
+    if (pr < 30) pr = 30;
+    var pMin = minPace - pr * 0.1;
+    var pMax = maxPace + pr * 0.1;
 
-    // Add some padding to the pace range
-    var paceRange = maxPace - minPace;
-    maxPace += paceRange * 0.1;
-    minPace -= paceRange * 0.1;
-    if (maxPace <= minPace) maxPace = minPace + 1;
+    var fs = Math.min(11, Math.max(8, Math.round(w / 26)));
+    ctx.font = fs + 'px monospace';
 
-    var paceScale = height / (maxPace - minPace);
+    // Y axis: 3 grid lines with pace labels
+    for (var gi = 0; gi <= 3; gi++) {
+      var gPace = pMin + (pMax - pMin) * gi / 3;
+      var gy = tm + ch - (ch * gi / 3);
 
-    // Draw intervals with height based on pace
-    var x = 0;
-    for (var i = 0; i < intervals.length; i++) {
-      var intervalWidth = (intervals[i].duration / totalDuration) * width;
-      // Calculate bar height based on pace (slower pace = taller bar)
-      var barHeight = ((intervals[i].pace - minPace) * paceScale);
-      var barY = height - barHeight;
-
-      ctx.fillStyle = intervals[i].color;
-      ctx.fillRect(x, barY, intervalWidth, barHeight);
-      x += intervalWidth;
-    }
-
-    // Draw progress line
-    if (currentTime > 0) {
-      var progressX = (currentTime / totalDuration) * width;
-      ctx.strokeStyle = '#FFFFFF';
-      ctx.lineWidth = 2;
+      ctx.strokeStyle = '#252525';
+      ctx.lineWidth = 1;
       ctx.beginPath();
-      ctx.moveTo(progressX, 0);
-      ctx.lineTo(progressX, height);
+      ctx.moveTo(lm, gy);
+      ctx.lineTo(lm + cw, gy);
+      ctx.stroke();
+
+      var lbl = formatPace(gPace);
+      var tw = ctx.measureText(lbl).width;
+      ctx.fillStyle = '#666666';
+      ctx.fillText(lbl, lm - tw - 3, gy - Math.round(fs * 0.4));
+    }
+
+    // Interval bars
+    var bx = lm;
+    for (var bi = 0; bi < intervals.length; bi++) {
+      var iv = intervals[bi];
+      var bw = (iv.duration / totalDuration) * cw;
+      var bh = ((pMax - iv.pace) / (pMax - pMin)) * ch;
+      ctx.fillStyle = paceColor(iv.pace);
+      ctx.fillRect(bx, tm + ch - bh, bw - 1, bh);
+      bx += bw;
+    }
+
+    // Axes
+    ctx.strokeStyle = '#444444';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(lm, tm);
+    ctx.lineTo(lm, tm + ch);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(lm, tm + ch);
+    ctx.lineTo(lm + cw, tm + ch);
+    ctx.stroke();
+
+    // X axis labels
+    var xStep = totalDuration <= 1800 ? 300 : 600;
+    for (var xi = 0; xi <= totalDuration; xi += xStep) {
+      var xp = lm + (xi / totalDuration) * cw;
+      var xlbl = '' + Math.round(xi / 60);
+      var xtw = ctx.measureText(xlbl).width;
+      ctx.strokeStyle = '#333333';
+      ctx.beginPath();
+      ctx.moveTo(xp, tm + ch);
+      ctx.lineTo(xp, tm + ch + 2);
+      ctx.stroke();
+      ctx.fillStyle = '#666666';
+      ctx.fillText(xlbl, xp - xtw / 2, tm + ch + 3);
+    }
+
+    // Vertical time marker
+    if (currentTime > 0) {
+      var px = lm + Math.min(1, currentTime / totalDuration) * cw;
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(px, tm);
+      ctx.lineTo(px, tm + ch);
       ctx.stroke();
     }
-
-    // Draw X-axis label (Time) - positioned clearly under the X-axis
-    ctx.fillStyle = '#FFFFFF';
-    ctx.font = '12px monospace';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'top';
-    ctx.fillText('Time (min)', width / 2, height + 20);
-
-    // Draw Y-axis label (Pace) - positioned clearly to the left of the Y-axis
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.save();
-    ctx.translate(-30, height / 2);
-    ctx.rotate(-Math.PI / 2);
-    ctx.fillText('Pace (min/km)', 0, 0);
-    ctx.restore();
   };
+"
+onActivate="
+  durationToken = $.subscribe('/Activity/Move/-1/Duration/Current', function(v) {
+    currentTime = v;
+    control('#intervalChart', 'REFRESH');
+  });
+"
+onDeactivate="
+  $.unsubscribe(durationToken);
 ">
 
-  <!-- Simple canvas visualization -->
   <object id="intervalChart" type="canvas"
-          build="ctx => drawIntervalChart(ctx, input.Duration)"
-          style="position:absolute; left:15%; width:70%; top:30%; height:40%;" />
+          build="ctx => drawChart(ctx)"
+          style="position:absolute; left:0; width:100%; top:22%; height:50%;" />
 
-  <!-- Title -->
   <div class="sp-title-bg" style="width:100%;height:20%;"></div>
   <div class="sp-title-text sp-t-m p-hc" style="top:5%">Interval Progress</div>
 
-  <!-- Current time display -->
-  <div class="sp-d-s f-num" style="top:calc(85% - 50%e);left:calc(50% - 50%e);">
+  <div class="sp-d-s f-num" style="top:calc(82% - 50%e);left:calc(50% - 50%e);">
     <eval input="/Activity/Move/-1/Duration/Current" outputFormat="Duration_FourdigitsFixed" default="--" />
   </div>
 </uiView>
