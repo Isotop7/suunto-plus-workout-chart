@@ -1,12 +1,13 @@
 <uiView onLoad="
-  /* Template data until Suunto Plus Guide data is available */
-  var intervals = [
-    { duration: 500, pace: 360 },
-    { duration: 900, pace: 420 },
-    { duration: 400, pace: 300 },
-    { duration: 700, pace: 480 },
-    { duration: 600, pace: 330 }
-  ];
+  var intervalsStr = localStorage.getItem('Intervals') || '500:360;900:420;400:300;700:480;600:330';
+  var intervals = [];
+  var intervalParts = intervalsStr.split(';');
+  for (var i = 0; i < intervalParts.length; i++) {
+    var kv = intervalParts[i].split(':');
+    if (kv.length === 2 && kv[0] && kv[1]) {
+      intervals.push({ duration: parseInt(kv[0], 10), pace: parseInt(kv[1], 10) });
+    }
+  }
 
   var currentTime = 0;
   var durationToken;

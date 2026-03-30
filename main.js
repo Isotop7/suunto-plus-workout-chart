@@ -1,4 +1,3 @@
-// Minimal main.js - all visualization logic is now in HTML
 var workoutStartTime = 0;
 var workoutDuration = 0;
 var isExerciseActive = false;
@@ -15,7 +14,6 @@ function evaluate(input, output) {
 
 // main.js loaded and system starts calling evaluate()
 function onLoad(input, output) {
-  // Initialize variables
   isExerciseActive = false;
 }
 

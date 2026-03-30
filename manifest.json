@@ -6,6 +6,9 @@
   "type": "feature",
   "usage": "workout",
   "modificationTime": 1773862793,
+  "settings": [
+    {"shownName": "Intervals", "path": "Intervals", "type": "string", "maxLength": 255}
+  ],
   "in": [
     {
       "name": "Duration",
