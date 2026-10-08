@@ -1,41 +1,28 @@
-var workoutStartTime = 0;
-var workoutDuration = 0;
-var isExerciseActive = false;
-
-// System starts calling this about once per second after the sports app is selected
-function evaluate(input, output) {
-  if (!isExerciseActive) {
-    return;
-  }
-
-  // Update current progress
-  workoutDuration = input.Duration;
-}
+// Live chart data is subscribed in interval-chart.html ($.subscribe in onActivate),
+// so the lifecycle callbacks below are empty stubs kept for the ESW contract.
 
 // main.js loaded and system starts calling evaluate()
 function onLoad(input, output) {
-  isExerciseActive = false;
+}
+
+// System starts calling this about once per second after the sports app is selected
+function evaluate(input, output) {
 }
 
 // Is evaluated on exercise start
 function onExerciseStart(input, output) {
-  isExerciseActive = true;
-  workoutStartTime = input.Duration;
 }
 
 // Is evaluated on exercise pause
 function onExercisePause(input, output) {
-  isExerciseActive = false;
 }
 
 // Is evaluated when continuing exercise after pause
 function onExerciseContinue(input, output) {
-  isExerciseActive = true;
 }
 
 // Is evaluated right before the sports app is removed from memory
 function onExerciseEnd(input, output) {
-  isExerciseActive = false;
 }
 
 // Is evaluated when a user enters the SuuntoPlus sports app screen

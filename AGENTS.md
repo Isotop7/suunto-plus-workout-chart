@@ -21,11 +21,11 @@ Three places must stay in sync:
 2. `data.json` — initial values, keyed by the same `path`
 3. Code reads values via `localStorage.getItem('<path>')` (only `localStorage` exists; `setObject`/`getObject` for objects)
 
-The `Intervals` setting is `duration:pace;duration:pace;...` (seconds each), parsed in `interval-chart.html` `onLoad`. The hardcoded fallback default there should match `data.json`.
+The `Intervals` setting is `duration:pace;duration:pace;...` (seconds each), parsed in `interval-chart.html` `onLoad`. The hardcoded fallback default there should match `data.json`. Manifest `maxLength` caps the string at 255 bytes (~30 pairs); the parser skips malformed/truncated pairs.
 
 ## Data flow gotcha
 
-The chart's live time comes from `$.subscribe('/Activity/Move/-1/Duration/Current', ...)` in the template's `onActivate` — **not** from `evaluate()` in `main.js`. Currently unused: the state tracked in `main.js`, the manifest `out` entries (`currentInterval`, `progressPercentage`), and the `Speed` input. Wire new live data through template subscriptions, not `evaluate()`.
+The chart's live time comes from `$.subscribe('/Activity/Move/-1/Duration/Current', ...)` in the template's `onActivate` — **not** from `evaluate()`. `main.js` lifecycle callbacks are empty stubs kept for the ESW contract, and manifest `out` is empty. Wire new live data through template subscriptions, not `evaluate()`.
 
 ## Template DSL gotchas
 

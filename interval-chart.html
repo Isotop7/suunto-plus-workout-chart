@@ -4,8 +4,11 @@
   var intervalParts = intervalsStr.split(';');
   for (var i = 0; i < intervalParts.length; i++) {
     var kv = intervalParts[i].split(':');
-    if (kv.length === 2 && kv[0] && kv[1]) {
-      intervals.push({ duration: parseInt(kv[0], 10), pace: parseInt(kv[1], 10) });
+    if (kv.length !== 2 || !kv[0] || !kv[1]) continue;
+    var duration = parseInt(kv[0], 10);
+    var pace = parseInt(kv[1], 10);
+    if (!isNaN(duration) && !isNaN(pace)) {
+      intervals.push({ duration: duration, pace: pace });
     }
   }
 
@@ -63,6 +66,8 @@
     ctx.fillStyle = '#000000';
     ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 
+    if (intervals.length === 0) return;
+
     var paceSpread = maxPace - minPace;
     if (paceSpread < 30) paceSpread = 30;
     var paceAxisMin = minPace - paceSpread * 0.1;
@@ -98,7 +103,7 @@
       var barTop = topMargin + chartHeight - barHeight;
 
       ctx.fillStyle = paceColor(interval.pace);
-      ctx.fillRect(barX, barTop, barWidth - 1, barHeight);
+      ctx.fillRect(barX, barTop, Math.max(1, barWidth - 1), barHeight);
 
       // Pace label — inside bar if tall enough, above bar otherwise
       var paceLabel = formatTime(interval.pace);
@@ -107,7 +112,7 @@
         var labelX = barX + (barWidth - 1) / 2 - paceLabelWidth / 2;
         if (barHeight >= fontSize + 2) {
           ctx.fillStyle = '#1a1a1a';
-          ctx.fillText(paceLabel, labelX, barTop);
+          ctx.fillText(paceLabel, labelX, barTop + fontSize + 1);
         } else {
           ctx.fillStyle = '#AAAAAA';
           ctx.fillText(paceLabel, labelX, barTop - fontSize - 3);
@@ -169,7 +174,8 @@ onActivate="
   });
 "
 onDeactivate="
-  $.unsubscribe(durationToken);
+  if (durationToken) $.unsubscribe(durationToken);
+  durationToken = undefined;
 ">
 
   <object id="intervalChart" type="canvas"

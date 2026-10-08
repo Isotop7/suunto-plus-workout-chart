@@ -14,21 +14,9 @@
       "name": "Duration",
       "source": "Activity/Move/-1/Duration/Current",
       "type": "subscribe"
-    },
-    {
-      "name": "Speed",
-      "source": "Activity/Current/Speed",
-      "type": "subscribe"
     }
   ],
-  "out": [
-    {
-      "name": "currentInterval"
-    },
-    {
-      "name": "progressPercentage"
-    }
-  ],
+  "out": [],
   "template": [
     {
       "name": "interval-chart.html"
